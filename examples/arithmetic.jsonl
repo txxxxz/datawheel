@@ -1,0 +1,6 @@
+{"id":"add-1","group":"addition","prompt":"2 + 3","response":"5"}
+{"id":"multiply-1","group":"multiplication","prompt":"4 * 6","response":"24"}
+{"id":"add-padding","group":"addition","prompt":"  7 + 8  ","response":" 15 "}
+{"id":"add-duplicate","group":"addition","prompt":"2 + 3","response":"5"}
+{"id":"empty-answer","group":"addition","prompt":"1 + 2","response":" "}
+{"id":"wrong-answer","group":"multiplication","prompt":"3 * 3","response":"10"}

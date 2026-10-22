@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datawheel-local"
+version = "0.1.0"
+description = "An inspectable local data cleaning and synthesis feedback loop"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+readme = "README.md"
+dependencies = []
+
+[project.scripts]
+datawheel = "datawheel.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

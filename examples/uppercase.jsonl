@@ -1,0 +1,2 @@
+{"id":"upper-1","group":"uppercase","prompt":"Uppercase: hello","response":"HELLO"}
+{"id":"upper-bad","group":"uppercase","prompt":"Uppercase: world","response":"world"}
