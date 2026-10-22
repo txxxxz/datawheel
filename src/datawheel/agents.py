@@ -5,7 +5,8 @@ from dataclasses import asdict, replace
 import math
 import unicodedata
 
-from .contracts import Adapter, Decision, Feedback, GenerationRequest, Record, Verdict, digest
+from .contracts import (Adapter, Decision, Feedback, GenerationBatch, GenerationError,
+                        GenerationRequest, Record, Verdict, digest)
 
 
 def allocate(weights: dict[str, float], budget: int) -> dict[str, int]:
@@ -48,8 +49,16 @@ class CleanAgent:
 class SynthesisAgent:
     """Pass the actual feedback and accepted examples to the replaceable generator."""
 
-    def run(self, request: GenerationRequest, adapter: Adapter) -> list[Record]:
-        candidates = adapter.generate(request)
+    def run(self, request: GenerationRequest, adapter: Adapter) -> tuple[list[Record], list[dict]]:
+        result = adapter.generate(request)
+        candidates = result.candidates if isinstance(result, GenerationBatch) else result
+        calls = result.calls if isinstance(result, GenerationBatch) else []
+        try:
+            return self.materialize(request, adapter, candidates), calls
+        except ValueError as error:
+            raise GenerationError(str(error), calls) from error
+
+    def materialize(self, request: GenerationRequest, adapter: Adapter, candidates) -> list[Record]:
         if len(candidates) != sum(request.allocation.values()):
             raise ValueError("adapter returned a candidate count different from the requested budget")
         if Counter(candidate.group for candidate in candidates) != Counter(request.allocation):

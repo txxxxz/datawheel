@@ -18,3 +18,4 @@ jobs:
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -v
       - run: datawheel run --input examples/tool_dialogues.jsonl --output runs/ci --rounds 2
+      - run: python examples/model_http/replay.py --output runs/http-replay

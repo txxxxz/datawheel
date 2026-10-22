@@ -2,7 +2,7 @@
 
 A small, inspectable data flywheel: **import → clean → synthesize → evaluate/select → feedback → repeat**.
 
-Datawheel uses four deterministic local agents with typed requests and saved handoff artifacts. A synthesis adapter produces candidates; a separate evaluation policy decides what enters the dataset. Failure reasons change the next round's sampling budget and reach the generator as structured feedback.
+Datawheel uses an explicit local coordinator, typed role requests and saved handoff artifacts. A synthesis adapter produces candidates; a separate deterministic evaluation policy decides what enters the dataset. Failure reasons change the next round's sampling budget and reach the generator as structured feedback. The optional HTTP adapter makes separate **draft → critic → revision** model calls with configurable models and prompts.
 
 The default example is a fictional inventory/support-tool conversation workflow. It runs offline, makes no API calls, and deliberately injects errors so the feedback loop is observable. Its repair rule is hand-written. The reported pass-rate change is a fixture result, not evidence of model learning or autonomous LLM collaboration.
 
@@ -33,6 +33,29 @@ With the shipped fixture and defaults:
 
 The input contains 10 records: 3 are admitted and 7 rejected with recorded reasons. Two rounds export 19 records: the 3 admitted seeds and 16 selected synthetic records. `rounds/0002/request.json` shows the actual feedback consumed in round 2. Holding the random seed and budget constant while changing only feedback also changes generated results; the tests verify that causal connection.
 
+## Bring your own model
+
+The generic HTTP adapter supports an explicit, unauthenticated/self-hosted chat-completions endpoint. It needs no edits to the core package when you change your data, tools or evaluator. First exercise the same HTTP path with the included local replay:
+
+```sh
+python examples/model_http/replay.py --output runs/http-replay
+```
+
+This starts an ephemeral server on `127.0.0.1`, sends six real HTTP requests over two rounds, and exports 12 records. Responses are **hand-authored prerecorded fixtures**, not recordings of a real model. The new unit-conversion domain and evaluator live entirely outside `src/datawheel`. A deliberately mistaken critic reports no issues, but independent evaluation still rejects two incorrect tool results.
+
+To use your own service, copy [the explicit JSON config](examples/model_http/config.json), set `endpoint`, `mode: "http-model"`, your generator/critic model names and prompts, `domain` tools/constraints, and an independent `evaluator` Python entry point. Then run:
+
+```sh
+PYTHONPATH=/path/to/your/evaluator datawheel run \
+  --input /path/to/your/records.jsonl --output runs/your-model \
+  --adapter datawheel.chat_adapter:ChatAdapter \
+  --adapter-config /path/to/your/config.json
+```
+
+There is no default remote endpoint and no credential, header or environment-variable authentication support. An endpoint requiring authentication must be accessed through a service you manage separately. Configuration must contain no secrets: its full contents are saved with the run. The adapter sends the domain configuration, **all accepted examples**, feedback and draft/review content to the configured endpoint and saves request bodies and raw response bodies locally. No privacy filter or redaction layer is provided.
+
+See [the HTTP contract and example](examples/model_http/README.md) for exact supported request/response shapes, failure behavior and the inputs needed for real-model validation. The local replay tests transport and orchestration; it establishes no model-quality improvement.
+
 ## What the roles exchange
 
 ```mermaid
@@ -51,11 +74,11 @@ flowchart LR
 | Role | Responsibility | Output |
 | --- | --- | --- |
 | Clean agent | Strip outer whitespace, normalize Unicode NFC, reject empty text and exact duplicates | Normalized records, rejection reasons, changed IDs |
-| Synthesis agent | Give accepted examples, group budgets, seed and previous feedback to the adapter; attach lineage | Candidate records and request hash |
+| Synthesis agent | Give accepted examples, budgets and feedback to an adapter; optionally run draft/critic/revision; attach lineage | Candidate records, request hash and model-call trace |
 | Evaluation agent | Independently validate the task, deduplicate, apply a score threshold, select deterministically | A decision for every candidate and selected records |
 | Feedback agent | Accumulate generation failures by group and reason; compute next-round weights | Structured feedback consumed by the next request |
 
-The single-process coordinator passes these typed messages and commits their artifacts. These roles have distinct policies and observable handoffs; they do not run separate services or LLM conversations. `messages.jsonl` records the sender, recipient, message kind and payload artifact. The generator never decides admission.
+The single-process coordinator passes these typed messages and commits their artifacts. Default fixtures execute local policies; `ChatAdapter` executes separately prompted generator and critic calls at one configured endpoint. `messages.jsonl` records role handoffs, and `model_calls.jsonl` records each HTTP stage, role, model, request and response. The generator and critic never decide admission. Separate calls do not imply statistically independent judgements, particularly when both roles use the same model.
 
 ## Contracts and policy
 
@@ -72,11 +95,13 @@ The cleaner preserves internal whitespace and original IDs. Import provenance re
 An adapter has `name`, `version`, `mode`, and two methods:
 
 ```python
-def generate(self, request: GenerationRequest) -> list[Candidate]: ...
+def generate(self, request: GenerationRequest) -> list[Candidate] | GenerationBatch: ...
 def evaluate(self, record: Record) -> Verdict: ...
 ```
 
 `GenerationRequest` contains the round index, derived random seed, exact per-group allocation, accepted examples, and structured `Feedback` including failure reasons. Return exactly the requested candidate count for each group. Every candidate must reference at least one supplied example through `parent_ids`. The coordinator assigns stable IDs and rejects collisions. Treat requests and their nested objects as read-only.
+
+Existing adapters can return a candidate list unchanged. `GenerationBatch(candidates, calls)` additionally carries an observable call trace. With `--adapter-config`, the factory receives the parsed JSON object as its sole argument; without it, the factory is called with no arguments. Configured adapters may declare a `dependencies` identity mapping; the HTTP adapter uses it to record the independent evaluator's source hash and version.
 
 `Verdict` contains `passed`, a finite score from 0 to 1, and a nonempty reason. Evaluation must be deterministic and independent of the generator's claims. Passing records below `--min-score` are rejected. Selection sorts by descending score, then ascending record ID, up to `--keep`; passing records outside this limit get `selection_limit` and do not count as rule failures. The bundled exact validators use scores 0 and 1; they do not pretend to measure nuanced language quality.
 
@@ -94,9 +119,9 @@ PYTHONPATH=examples datawheel run \
   --adapter custom_adapter:UppercaseAdapter
 ```
 
-For your model, replace `generate()` with your own generation code and map its output to `Candidate`. Include `request.feedback` and the allocated groups in the model request if generation should adapt to previous failures. Keep `evaluate()` as an independent rule set or deterministic evaluator appropriate to your task. The shipped adapters make no paid calls and no provider integrations are configured automatically. An adapter is ordinary trusted Python code; it runs with your process permissions.
+For a model with the documented chat-completions contract, use the configured HTTP adapter above. For another interface, replace `generate()` with your own generation code and map its output to `Candidate`. Include `request.feedback` and the allocated groups in the model request if generation should adapt to previous failures. Keep `evaluate()` as an independent rule set or deterministic evaluator appropriate to your task. Examples and tests make no paid calls; an explicitly configured real endpoint may have its own costs. Adapters and evaluators are ordinary trusted Python code running with your process permissions.
 
-Set `mode` accurately, and update `version` whenever model weights, prompts, model settings, helper code, tools or external dependencies affecting output change. The manifest automatically hashes the adapter class's source file; it does **not** discover every imported helper, remote model version or environment setting. Those are your adapter's versioning responsibility. Unexpected adapter errors propagate; there is no fallback generator.
+Set `mode` accurately, and update `version` whenever model weights, helper code or external dependencies affecting output change. The manifest hashes the complete nonsecret configuration and adapter class's source file. `ChatAdapter` also hashes its evaluator's source file and records the evaluator version. It does **not** discover every imported helper, remote model revision or environment setting; those remain your versioning responsibility. Unexpected adapter errors propagate; there is no fallback generator.
 
 For the small arithmetic diagnostic:
 
@@ -113,6 +138,7 @@ runs/dialogue/
   seed/                     # Admitted seeds, cleaning/validation decisions and report
   rounds/0001/
     request.json            # Exact examples, allocation and feedback given to generation
+    model_calls.jsonl        # HTTP stage/role/model/request/raw response; empty for local fixtures
     generated.jsonl         # All candidates, including rejected ones
     decisions.jsonl         # Rule outcome, score, selection and reason per candidate
     selected.jsonl          # Newly admitted synthetic records
@@ -123,6 +149,7 @@ runs/dialogue/
   dataset.jsonl             # Admitted seeds plus selected records from all rounds
   summary.json              # Machine-readable quality report
   report.md                 # Human-readable quality report
+  failed/                   # Request/call evidence for handled generation failures, when present
 ```
 
 Each seed/round directory is written privately and atomically renamed into place. Committed stages are checkpoints; recovery verifies their content hashes and chain before using them. A process interruption can leave a hidden temporary directory, which recovery ignores. Completed rounds are never regenerated; a missing export is rebuilt from checkpoints.
@@ -136,7 +163,9 @@ datawheel run --input examples/tool_dialogues.jsonl --output runs/dialogue \
 
 The input content hash, engine code, adapter identity and generation settings must match. A changed source/config/version is a new experiment requiring a fresh output directory. The total requested rounds may increase. Source files are read only. Use one writer per output directory and keep the input fixed while a run is active. This provides local process-interruption recovery; it is not a distributed transaction system or a promise about power-loss durability.
 
-The shipped adapters reproduce every artifact byte-for-byte with the same settings and source. A remote nondeterministic generator may produce different results when an **uncommitted** round is retried; already committed rounds remain fixed. Checkpoints detect accidental changes, not adversarial tampering by someone able to rewrite the full hash chain.
+The deterministic local adapters reproduce every artifact byte-for-byte with the same settings and source. HTTP calls to an **uncommitted** round are repeated from its draft stage on resume and can produce different results or incur additional service costs; already committed rounds make no further calls. Handled transport, response-format and candidate-contract failures preserve attempt traces in `failed/`. A hard process termination or later evaluator/programming error can lose that uncommitted call trace. Trace storage is not durable after each HTTP call and does not provide exactly-once model invocation.
+
+Version 0.2 uses a new manifest schema and engine identity. Start a new output directory for 0.1 runs; automatic checkpoint migration is not implemented. Checkpoints detect accidental changes, not adversarial tampering by someone able to rewrite the full hash chain.
 
 ## Development and limits
 
@@ -146,8 +175,8 @@ python -m unittest discover -s tests -v
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-Tests cover actual feedback-driven allocation, a controlled feedback intervention, exact tool checks, lineage, deterministic selection, unchanged input, two interruption boundaries, byte-identical recovery, changed-source/checkpoint rejection, and a separate custom adapter. GitHub Actions runs the tests and dialogue demo on Python 3.11 and 3.14.
+Tests cover feedback-driven allocation, a controlled feedback intervention, exact tool checks, lineage, deterministic selection, unchanged input, interruption recovery, and custom adapters. HTTP contract tests bind only to `127.0.0.1` and check role/model requests, feedback delivery, independent admission, invalid responses, failed-attempt traces and resume without repeated calls. GitHub Actions runs the tests and both local demos on Python 3.11 and 3.14.
 
-The current implementation holds datasets and request snapshots in memory, so it targets small local experiments. It has no distributed workers, model training, semantic deduplication or built-in privacy filter. The dialogue evaluator supports its documented templates and fictional tool world, not arbitrary natural-language intent. Choose independent task-specific validation before admitting real data.
+The current implementation holds datasets and request snapshots in memory, so it targets small local experiments. It has no distributed workers, model training, semantic deduplication or built-in privacy filter. Domain/tool schemas are model context; the core does not execute tools or provide a general tool rollout engine. Independent evaluators must validate the relevant schema, semantics and world state. The bundled dialogue evaluator supports documented templates and a fictional tool world, not arbitrary natural-language intent. Real-model quality has not been measured by the shipped fixtures.
 
 See [GOAL.md](GOAL.md), the [runtime decision](docs/adr/001-runtime.md), [verification evidence](docs/verification.md), and [AGENTS.md](AGENTS.md). The repository's [coding skill](.agents/skills/readable-pipeline-code/SKILL.md) guides coding agents; it is not a runtime plugin. Code and newly authored synthetic examples are provided under the [MIT license](LICENSE); [release scope](docs/release-audit.md) and the [license comparison](docs/adr/002-license.md) explain the boundaries.

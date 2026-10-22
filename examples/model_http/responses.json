@@ -1,0 +1,110 @@
+[
+  {
+    "stage": "draft",
+    "model": "recorded-generator",
+    "response": {
+      "id": "recorded-1-draft",
+      "model": "recorded-generator",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"candidates\": [{\"group\": \"duration\", \"prompt\": \"Convert 100 minutes to seconds.\", \"response\": \"6000 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 100 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 100}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6000}}, {\"speaker\": \"assistant\", \"text\": \"6000 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 101 minutes to seconds.\", \"response\": \"6060 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 101 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 101}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6060}}, {\"speaker\": \"assistant\", \"text\": \"6060 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 102 minutes to seconds.\", \"response\": \"6120 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 102 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 102}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6120}}, {\"speaker\": \"assistant\", \"text\": \"6120 seconds\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 100 centimeters to meters.\", \"response\": \"999.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 100 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 100}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"999.00\"}}, {\"speaker\": \"assistant\", \"text\": \"999.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 101 centimeters to meters.\", \"response\": \"999.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 101 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 101}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"999.00\"}}, {\"speaker\": \"assistant\", \"text\": \"999.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 102 centimeters to meters.\", \"response\": \"1.02 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 102 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 102}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"1.02\"}}, {\"speaker\": \"assistant\", \"text\": \"1.02 meters\"}]}}]}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "critique",
+    "model": "recorded-critic",
+    "response": {
+      "id": "recorded-1-critique",
+      "model": "recorded-critic",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"issues\": []}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "revise",
+    "model": "recorded-generator",
+    "response": {
+      "id": "recorded-1-revise",
+      "model": "recorded-generator",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"candidates\": [{\"group\": \"duration\", \"prompt\": \"Convert 100 minutes to seconds.\", \"response\": \"6000 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 100 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 100}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6000}}, {\"speaker\": \"assistant\", \"text\": \"6000 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 101 minutes to seconds.\", \"response\": \"6060 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 101 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 101}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6060}}, {\"speaker\": \"assistant\", \"text\": \"6060 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 102 minutes to seconds.\", \"response\": \"6120 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 102 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 102}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 6120}}, {\"speaker\": \"assistant\", \"text\": \"6120 seconds\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 100 centimeters to meters.\", \"response\": \"999.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 100 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 100}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"999.00\"}}, {\"speaker\": \"assistant\", \"text\": \"999.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 101 centimeters to meters.\", \"response\": \"999.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 101 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 101}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"999.00\"}}, {\"speaker\": \"assistant\", \"text\": \"999.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 102 centimeters to meters.\", \"response\": \"1.02 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 102 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 102}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"1.02\"}}, {\"speaker\": \"assistant\", \"text\": \"1.02 meters\"}]}}]}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "draft",
+    "model": "recorded-generator",
+    "response": {
+      "id": "recorded-2-draft",
+      "model": "recorded-generator",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"candidates\": [{\"group\": \"duration\", \"prompt\": \"Convert 200 minutes to seconds.\", \"response\": \"12000 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 200 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 200}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 12000}}, {\"speaker\": \"assistant\", \"text\": \"12000 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 201 minutes to seconds.\", \"response\": \"12060 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 201 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 201}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 12060}}, {\"speaker\": \"assistant\", \"text\": \"12060 seconds\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 200 centimeters to meters.\", \"response\": \"2.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 200 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 200}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.00\"}}, {\"speaker\": \"assistant\", \"text\": \"2.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 201 centimeters to meters.\", \"response\": \"2.01 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 201 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 201}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.01\"}}, {\"speaker\": \"assistant\", \"text\": \"2.01 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 202 centimeters to meters.\", \"response\": \"2.02 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 202 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 202}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.02\"}}, {\"speaker\": \"assistant\", \"text\": \"2.02 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 203 centimeters to meters.\", \"response\": \"2.03 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 203 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 203}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.03\"}}, {\"speaker\": \"assistant\", \"text\": \"2.03 meters\"}]}}]}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "critique",
+    "model": "recorded-critic",
+    "response": {
+      "id": "recorded-2-critique",
+      "model": "recorded-critic",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"issues\": []}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "revise",
+    "model": "recorded-generator",
+    "response": {
+      "id": "recorded-2-revise",
+      "model": "recorded-generator",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"candidates\": [{\"group\": \"duration\", \"prompt\": \"Convert 200 minutes to seconds.\", \"response\": \"12000 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 200 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 200}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 12000}}, {\"speaker\": \"assistant\", \"text\": \"12000 seconds\"}]}}, {\"group\": \"duration\", \"prompt\": \"Convert 201 minutes to seconds.\", \"response\": \"12060 seconds\", \"parent_ids\": [\"seed-duration\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 201 minutes to seconds.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"minutes_to_seconds\", \"arguments\": {\"minutes\": 201}}}, {\"speaker\": \"tool\", \"result\": {\"seconds\": 12060}}, {\"speaker\": \"assistant\", \"text\": \"12060 seconds\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 200 centimeters to meters.\", \"response\": \"2.00 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 200 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 200}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.00\"}}, {\"speaker\": \"assistant\", \"text\": \"2.00 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 201 centimeters to meters.\", \"response\": \"2.01 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 201 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 201}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.01\"}}, {\"speaker\": \"assistant\", \"text\": \"2.01 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 202 centimeters to meters.\", \"response\": \"2.02 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 202 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 202}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.02\"}}, {\"speaker\": \"assistant\", \"text\": \"2.02 meters\"}]}}, {\"group\": \"length\", \"prompt\": \"Convert 203 centimeters to meters.\", \"response\": \"2.03 meters\", \"parent_ids\": [\"seed-length\"], \"metadata\": {\"dialogue\": [{\"speaker\": \"user\", \"text\": \"Convert 203 centimeters to meters.\"}, {\"speaker\": \"assistant\", \"call\": {\"name\": \"centimeters_to_meters\", \"arguments\": {\"centimeters\": 203}}}, {\"speaker\": \"tool\", \"result\": {\"meters\": \"2.03\"}}, {\"speaker\": \"assistant\", \"text\": \"2.03 meters\"}]}}]}"
+          },
+          "finish_reason": "stop"
+        }
+      ]
+    }
+  }
+]

@@ -1,3 +1,3 @@
-"""Local, inspectable data agents. No network calls or model training built in."""
+"""Inspectable data agents with offline fixtures and an explicitly configured HTTP adapter."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

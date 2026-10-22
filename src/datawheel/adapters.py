@@ -7,7 +7,7 @@ from pathlib import Path
 import random
 import re
 
-from .contracts import Adapter, Candidate, GenerationRequest, Record, Verdict
+from .contracts import Adapter, Candidate, GenerationRequest, Record, Verdict, digest
 
 
 def evaluate_arithmetic(record: Record) -> Verdict:
@@ -47,20 +47,32 @@ class ArithmeticAdapter:
         return candidates
 
 
-def load_adapter(spec: str) -> Adapter:
+def load_symbol(spec: str):
     module_name, separator, factory_name = spec.partition(":")
     if not separator or not module_name or not factory_name:
-        raise ValueError("adapter must be module:factory, for example datawheel.adapters:ArithmeticAdapter")
-    adapter = getattr(importlib.import_module(module_name), factory_name)()
+        raise ValueError("Python entry point must be module:name")
+    return getattr(importlib.import_module(module_name), factory_name)
+
+
+def load_adapter(spec: str, config: dict | None = None) -> Adapter:
+    if config is not None and not isinstance(config, dict):
+        raise ValueError("adapter configuration must be a JSON object")
+    factory = load_symbol(spec)
+    adapter = factory(config) if config is not None else factory()
     for field in ("name", "version", "mode"):
         if not isinstance(getattr(adapter, field, None), str) or not getattr(adapter, field):
             raise ValueError(f"adapter.{field} must be a nonempty string")
     return adapter
 
 
-def adapter_identity(adapter: Adapter, spec: str) -> dict:
-    source = inspect.getsourcefile(type(adapter))
+def source_hash(symbol) -> str:
+    source = inspect.getsourcefile(symbol)
     if source is None:
-        raise ValueError("adapter must have a readable Python source file for version tracking")
+        raise ValueError("adapter and evaluator must have readable Python source files for version tracking")
+    return hashlib.sha256(Path(source).read_bytes()).hexdigest()
+
+
+def adapter_identity(adapter: Adapter, spec: str, config: dict | None = None) -> dict:
     return {"spec": spec, "name": adapter.name, "version": adapter.version, "mode": adapter.mode,
-            "implementation_sha256": hashlib.sha256(Path(source).read_bytes()).hexdigest()}
+            "implementation_sha256": source_hash(type(adapter)), "config_sha256": digest(config),
+            "dependencies": getattr(adapter, "dependencies", {})}

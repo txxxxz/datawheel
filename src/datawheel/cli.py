@@ -13,6 +13,7 @@ def main() -> None:
     runner.add_argument("--input", required=True, type=Path)
     runner.add_argument("--output", required=True, type=Path)
     runner.add_argument("--adapter", default=DEFAULT_ADAPTER)
+    runner.add_argument("--adapter-config", type=Path, help="Nonsecret JSON configuration passed to the adapter factory")
     runner.add_argument("--rounds", type=int, default=2, help="Total desired rounds, including committed rounds")
     runner.add_argument("--budget", type=int, default=12)
     runner.add_argument("--keep", type=int, default=8)
@@ -26,7 +27,8 @@ def main() -> None:
         print((args.output / "report.md").read_text(encoding="utf-8"), end="")
         return
     summary = run(args.input, args.output, rounds=args.rounds, budget=args.budget, keep=args.keep,
-                  seed=args.seed, min_score=args.min_score, adapter_spec=args.adapter, resume=args.resume)
+                  seed=args.seed, min_score=args.min_score, adapter_spec=args.adapter,
+                  adapter_config=args.adapter_config, resume=args.resume)
     print(f"{summary['mode']}: exported {summary['exported_records']} records; report: {args.output / 'report.md'}")
 
 

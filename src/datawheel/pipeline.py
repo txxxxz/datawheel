@@ -1,4 +1,4 @@
-"""An explicit coordinator: each role consumes the previous role's saved message."""
+"""An explicit coordinator with typed role messages and committed round artifacts."""
 
 from collections import Counter
 from dataclasses import asdict
@@ -8,7 +8,7 @@ from pathlib import Path
 from . import __version__
 from .adapters import adapter_identity, load_adapter
 from .agents import CleanAgent, EvaluationAgent, FeedbackAgent, SynthesisAgent, allocate
-from .contracts import Feedback, GenerationRequest, digest, json_text
+from .contracts import Feedback, GenerationError, GenerationRequest, digest, json_text
 from .store import atomic_write, commit_directory, jsonl_text, read_json, read_records, sha256_file, verify_commit
 
 
@@ -24,10 +24,9 @@ def message(sender: str, recipient: str, kind: str, artifact: str) -> dict:
     return {"sender": sender, "recipient": recipient, "kind": kind, "artifact": artifact}
 
 
-def prepare_seed(input_path: Path, output: Path, manifest: dict) -> str:
+def prepare_seed(input_path: Path, output: Path, manifest: dict, adapter) -> str:
     records = read_records(input_path, manifest["source_sha256"])
     cleaned, rejected, changed = CleanAgent().run(records)
-    adapter = load_adapter(manifest["adapter"]["spec"])
     admitted, decisions = EvaluationAgent().run(cleaned, [], adapter, len(cleaned), manifest["config"]["min_score"])
     if not admitted:
         raise ValueError("no seed records passed cleaning and domain validation")
@@ -64,14 +63,17 @@ def round_report(index: int, allocation: dict, decisions: list, feedback: Feedba
 
 def run(input_path: str | Path, output: str | Path, *, rounds: int = 2, budget: int = 12,
         keep: int = 8, seed: int = 7, min_score: float = 1.0,
-        adapter_spec: str = DEFAULT_ADAPTER, resume: bool = False) -> dict:
+        adapter_spec: str = DEFAULT_ADAPTER, adapter_config: str | Path | None = None,
+        resume: bool = False) -> dict:
     """Run or extend a local experiment. One writer per output directory is supported."""
     if rounds < 1 or budget < 1 or keep < 1 or keep > budget or not 0 <= min_score <= 1:
         raise ValueError("require rounds >= 1, budget >= 1, 1 <= keep <= budget, and 0 <= min_score <= 1")
     input_path, output = Path(input_path), Path(output)
-    adapter = load_adapter(adapter_spec)
-    manifest = {"schema_version": 1, "engine_version": __version__, "engine_sha256": engine_hash(),
-                "source_sha256": sha256_file(input_path), "adapter": adapter_identity(adapter, adapter_spec),
+    config = read_json(Path(adapter_config)) if adapter_config is not None else None
+    adapter = load_adapter(adapter_spec, config)
+    manifest = {"schema_version": 2, "engine_version": __version__, "engine_sha256": engine_hash(),
+                "source_sha256": sha256_file(input_path), "adapter": adapter_identity(adapter, adapter_spec, config),
+                "adapter_config": config,
                 "config": {"budget": budget, "keep": keep, "seed": seed, "min_score": min_score}}
     if resume:
         if read_json(output / "manifest.json") != manifest:
@@ -80,7 +82,7 @@ def run(input_path: str | Path, output: str | Path, *, rounds: int = 2, budget: 
         output.mkdir(parents=True, exist_ok=False)
         atomic_write(output / "manifest.json", json_text(manifest))
     previous_hash = (verify_commit(output / "seed", digest(manifest)) if (output / "seed").exists()
-                     else prepare_seed(input_path, output, manifest))
+                     else prepare_seed(input_path, output, manifest, adapter))
     pool = read_records(output / "seed" / "records.jsonl")
     seed_report = read_json(output / "seed" / "report.json")
     feedback = Feedback.initial(seed_report["groups"])
@@ -101,18 +103,31 @@ def run(input_path: str | Path, output: str | Path, *, rounds: int = 2, budget: 
         round_seed = int(hashlib.sha256(f"{seed}:{index}".encode()).hexdigest()[:16], 16)
         allocation = allocate(feedback.weights, budget)
         request = GenerationRequest(index, round_seed, allocation, tuple(pool), feedback)
-        generated = SynthesisAgent().run(request, adapter)
+        try:
+            generated, calls = SynthesisAgent().run(request, adapter)
+        except GenerationError as error:
+            failures = output / "failed"
+            failures.mkdir(exist_ok=True)
+            attempt = 1 + len(list(failures.glob(f"round-{index:04d}-*")))
+            commit_directory(failures / f"round-{index:04d}-attempt-{attempt:04d}", {
+                "request.json": json_text(asdict(request)),
+                "model_calls.jsonl": jsonl_text(error.calls),
+                "error.json": json_text({"error": str(error)}),
+            }, previous_hash)
+            raise
         selected, decisions = EvaluationAgent().run(generated, pool, adapter, keep, min_score)
         feedback = FeedbackAgent().run(feedback, decisions, index)
         report = round_report(index, allocation, decisions, feedback, budget)
         previous_hash = commit_directory(rounds_path / f"{index:04d}", {
             "request.json": json_text(asdict(request)),
+            "model_calls.jsonl": jsonl_text(calls),
             "generated.jsonl": jsonl_text(asdict(record) for record in generated),
             "decisions.jsonl": jsonl_text(asdict(decision) for decision in decisions),
             "selected.jsonl": jsonl_text(asdict(record) for record in selected),
             "feedback.json": json_text(asdict(feedback)), "report.json": json_text(report),
             "messages.jsonl": jsonl_text([
                 message("feedback", "synthesizer", "generation_request", "request.json"),
+                message("synthesizer", "auditor", "model_call_trace", "model_calls.jsonl"),
                 message("synthesizer", "evaluator", "candidate_records", "generated.jsonl"),
                 message("evaluator", "feedback", "admission_decisions", "decisions.jsonl"),
                 message("feedback", "coordinator", "next_round_policy", "feedback.json"),
@@ -148,6 +163,8 @@ def render_report(summary: dict) -> str:
                   "`rounds/*/request.json` contains the feedback and examples actually given to generation. "
                   "`decisions.jsonl` records every judgement; `messages.jsonl` records role handoffs. "
                   "Passing but unselected records have reason `selection_limit`, and do not count as rule failures.", "",
-                  "These are deterministic local agents. Offline fixture repairs are hand-written policy changes, "
-                  "not evidence of LLM collaboration, learning, generalization, or production readiness.", ""])
+                  "The coordinator and admission policy are deterministic. HTTP adapters can call separate "
+                  "generator and critic roles; their requests and raw responses are in `model_calls.jsonl`. "
+                  "Offline/replay results use hand-written fixtures and do not establish model learning, "
+                  "generalization, or production readiness.", ""])
     return "\n".join(lines)

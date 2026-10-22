@@ -56,6 +56,21 @@ class Candidate:
 
 
 @dataclass(frozen=True)
+class GenerationBatch:
+    """Optional traced result; existing adapters may continue returning a candidate list."""
+    candidates: list[Candidate]
+    calls: list[dict[str, Any]]
+
+
+class GenerationError(ValueError):
+    """A failed generation attempt with the HTTP calls already made, if any."""
+
+    def __init__(self, message: str, calls: list[dict[str, Any]]):
+        super().__init__(message)
+        self.calls = calls
+
+
+@dataclass(frozen=True)
 class Verdict:
     passed: bool
     score: float
@@ -100,7 +115,7 @@ class Adapter(Protocol):
     version: str
     mode: str
 
-    def generate(self, request: GenerationRequest) -> list[Candidate]: ...
+    def generate(self, request: GenerationRequest) -> list[Candidate] | GenerationBatch: ...
 
     def evaluate(self, record: Record) -> Verdict:
         """Return a deterministic, domain-specific judgement, independently of generation."""

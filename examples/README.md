@@ -1,6 +1,6 @@
 # Public, synthetic examples
 
-All records in this directory were written for this project. No customer conversations or private project data are included. Every shipped adapter runs offline.
+All records in this directory were written for this project. No customer conversations or private project data are included. The default adapters run offline; [the HTTP example](model_http/README.md) exercises the configurable model adapter against hand-authored responses served on loopback.
 
 ## Tool conversations: the main example
 

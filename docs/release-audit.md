@@ -2,7 +2,7 @@
 
 Datawheel is newly authored for this repository. Predecessor workflows were inspected read-only to understand the problem; their source, prompts, configuration, credentials, and datasets were not copied. Private source locations and the investigation record stay outside this repository.
 
-The bundled examples are invented fixtures. The dialogue examples use fictional tools and records, not customer or banking data. Model-like behavior is explicitly offline/mock; the demo does not call a model service or use a remote compute resource.
+The bundled examples are invented fixtures. The dialogue examples use fictional tools and records, not customer or banking data. Built-in generation and the local HTTP response fixture are explicitly offline/mock. Release verification calls only the local fixture, without a paid model or remote compute resource. The configurable HTTP adapter can call a developer's own model endpoint when they explicitly supply one; that capability has not been validated against a real model in this release.
 
 The MIT license covers the newly authored repository material. It does not relicense third-party code, data, or models connected by users. See [the license decision](adr/002-license.md).
 

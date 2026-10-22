@@ -1,0 +1,57 @@
+{
+  "name": "conversion-model-example",
+  "version": "1",
+  "mode": "http-replay",
+  "endpoint": "http://127.0.0.1:8765/v1/chat/completions",
+  "generator": {
+    "model": "recorded-generator",
+    "system_prompt": "Author complete conversion tool dialogues. Respect the requested group counts and use previous rule failures to repair mistakes."
+  },
+  "critic": {
+    "model": "recorded-critic",
+    "system_prompt": "Review each dialogue against the user request, tools and exact conversion rules. Return issues for the author to address."
+  },
+  "evaluator": {
+    "callable": "conversion:evaluate",
+    "version": "1"
+  },
+  "domain": {
+    "description": "Unit conversion conversations with groups length and duration. Use only nonnegative integers up to 999999999. Centimeters to meters has exactly two decimal places. Minutes to seconds multiplies by 60. The metadata dialogue has four turns with speaker user/assistant/tool/assistant, a call object on the first assistant turn and a result object on the tool turn.",
+    "tools": [
+      {
+        "name": "centimeters_to_meters",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "centimeters": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "centimeters"
+          ],
+          "additionalProperties": false
+        }
+      },
+      {
+        "name": "minutes_to_seconds",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "minutes"
+          ],
+          "additionalProperties": false
+        }
+      }
+    ]
+  },
+  "temperature": 0.0,
+  "timeout_seconds": 10
+}
